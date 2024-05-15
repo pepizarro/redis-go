@@ -5,19 +5,21 @@ import (
 	"net"
 
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
-	"github.com/codecrafters-io/redis-starter-go/app/server/handlers"
+	"github.com/codecrafters-io/redis-starter-go/app/server/handler"
 )
 
 type Server struct {
 	address  string
 	port     string
 	protocol resp.RESP
+	h        *handler.Handler
 }
 
-func NewServer(address string, port string) *Server {
+func NewServer(address string, port string, h *handler.Handler) *Server {
 	return &Server{
 		address: address,
 		port:    port,
+		h:       h,
 	}
 }
 
@@ -42,11 +44,11 @@ func (s *Server) Start() error {
 			continue
 		}
 
-		go route(conn, s.protocol)
+		go route(conn, s.protocol, s.h)
 	}
 }
 
-func route(conn net.Conn, protocol resp.RESP) {
+func route(conn net.Conn, protocol resp.RESP, h *handler.Handler) {
 	defer conn.Close()
 	buffer := make([]byte, 1024)
 
@@ -61,18 +63,29 @@ func route(conn net.Conn, protocol resp.RESP) {
 			return
 		}
 
+		fmt.Println("\nReceived:\n", string(buffer[:n]))
+
 		// Get the command
 		command, err := protocol.GetCommand(buffer[:n])
 		if err != nil {
-			fmt.Println("Error getting command:", err)
+			errMsg := fmt.Sprintf("-%s\r\n", err.Error())
+			_, err := conn.Write([]byte(errMsg))
+			if err != nil {
+				fmt.Println("Error writing to client: ", err)
+			}
+
 			return
 		}
 
 		switch command {
 		case "PING":
-			handlers.PingHandler(conn, buffer[:n])
+			h.PingHandler(conn, buffer[:n])
 		case "ECHO":
-			handlers.EchoHandler(conn, buffer[:n])
+			h.EchoHandler(conn, buffer[:n])
+		case "SET":
+			h.SetHandler(conn, buffer[:n])
+		case "GET":
+			h.GetHandler(conn, buffer[:n])
 		default:
 			fmt.Println("Command not found")
 		}

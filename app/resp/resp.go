@@ -22,6 +22,10 @@ func (r *RESP) GetCommand(buffer []byte) (string, error) {
 		return "PING", nil
 	case strings.EqualFold(command, "ECHO"):
 		return "ECHO", nil
+	case strings.EqualFold(command, "SET"):
+		return "SET", nil
+	case strings.EqualFold(command, "GET"):
+		return "GET", nil
 
 	default:
 		return "", fmt.Errorf("Unknown command: %s", command)
