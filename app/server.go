@@ -3,16 +3,20 @@ package main
 import (
 	"fmt"
 
-	"github.com/codecrafters-io/redis-starter-go/app/server"
-	"github.com/codecrafters-io/redis-starter-go/app/server/handler"
-	// Uncomment this block to pass the first stage
+	"github.com/codecrafters-io/redis-starter-go/app/handler"
+	"github.com/codecrafters-io/redis-starter-go/app/protocol"
+	"github.com/codecrafters-io/redis-starter-go/app/storage"
 )
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
 
-	h := handler.NewHandler()
-	server := server.NewServer("0.0.0.0", "6379", h)
+	store := storage.NewKeySpace()
+	go store.LogKeySpace()
+	parser := protocol.NewRESP()
+
+	handler := handler.NewHandler(store, parser)
+
+	server := NewRedisServer("0.0.0.0", "6379", handler)
 
 	fmt.Println("Starting redis server...")
 
