@@ -9,6 +9,7 @@ import (
 type KeySpace struct {
 	mu       sync.RWMutex
 	keyspace map[string]item
+	config   *Config
 }
 
 type item struct {
@@ -17,16 +18,27 @@ type item struct {
 	expiration time.Time
 }
 
-func NewKeySpace() *KeySpace {
+func NewKeySpace(config *Config) *KeySpace {
+
+	if config == nil {
+		config = DefaultConfig()
+	}
+
+	fmt.Println("Using config: ", config)
+
 	ks := &KeySpace{
 		keyspace: make(map[string]item),
+		config:   config,
 	}
+
 	go func() {
 		for {
 			ks.cleanup()
 			time.Sleep(1 * time.Millisecond)
 		}
 	}()
+
+	go ks.LogKeySpace()
 
 	return ks
 }
@@ -40,6 +52,10 @@ func (k *KeySpace) cleanup() {
 			delete(k.keyspace, key)
 		}
 	}
+}
+
+func (k *KeySpace) GetConfig() *Config {
+	return k.config
 }
 
 func (k *KeySpace) LogKeySpace() {

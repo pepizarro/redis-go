@@ -14,14 +14,13 @@ func NewRESP() *RESP {
 }
 
 func (r *RESP) GetCommand(buffer []byte) (string, error) {
-
 	lines := bytes.Split(buffer, []byte{'\r', '\n'})
 	if len(lines) < 3 {
 		return "", fmt.Errorf("Invalid command: %s", buffer)
 	}
 	command := strings.ToLower(string(lines[2]))
-	fmt.Println("Command: ", command)
 
+	// check if exists, use an enum?
 	switch command {
 	case "ping":
 		return "ping", nil
@@ -31,10 +30,36 @@ func (r *RESP) GetCommand(buffer []byte) (string, error) {
 		return "set", nil
 	case "get":
 		return "get", nil
+	case "config":
+		return "config", nil
 
 	default:
 		return "", fmt.Errorf("Unknown command: %s", command)
 	}
+}
+
+func (r *RESP) GetSubCommand(buffer []byte) (string, error) {
+
+	params, err := r.GetParams(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	// get the subcommand from a sub slice
+	params = append(params[:1], params[3:]...)
+	var newBuffer []byte
+
+	for _, item := range params {
+		newBuffer = append(newBuffer, item...)
+		newBuffer = append(newBuffer, '\r', '\n')
+	}
+
+	subCommand, err := r.GetCommand(newBuffer)
+	if err != nil {
+		return "", err
+	}
+
+	return subCommand, nil
 }
 
 func (r *RESP) GetParams(buffer []byte) ([][]byte, error) {
@@ -80,4 +105,16 @@ func (r *RESP) WriteNull() []byte {
 
 func (r *RESP) WriteOk() []byte {
 	return []byte("+OK\r\n")
+}
+
+func (r *RESP) WriteArray(array [][]byte) []byte {
+	length := len(array)
+
+	var buffer bytes.Buffer
+	for _, item := range array {
+		buffer.Write(item)
+	}
+
+	return []byte(fmt.Sprintf("*%d\r\n%s", length, buffer.String()))
+
 }

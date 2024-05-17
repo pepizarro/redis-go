@@ -8,6 +8,14 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/storage"
 )
 
+const (
+	PING   = "ping"
+	ECHO   = "echo"
+	SET    = "set"
+	GET    = "get"
+	CONFIG = "config"
+)
+
 type Handler struct {
 	store  *storage.KeySpace
 	parser protocol.Parser
@@ -28,14 +36,16 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 	}
 
 	switch command {
-	case "ping":
+	case PING:
 		h.PingHandler(conn, buffer)
-	case "echo":
+	case ECHO:
 		h.EchoHandler(conn, buffer)
-	case "set":
+	case SET:
 		h.SetHandler(conn, buffer)
-	case "get":
+	case GET:
 		h.GetHandler(conn, buffer)
+	case CONFIG:
+		h.ConfigHandler(conn, buffer)
 	default:
 		fmt.Println("Unknown command: ", command)
 	}
