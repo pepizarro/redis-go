@@ -13,8 +13,8 @@ func main() {
 
 	// get flag --dir
 	// get flag --filename
-	dirPtr := flag.String("dir", "/tmp", "The directory to store the database files.")
-	dbfilenamePtr := flag.String("dbfilename", "db", "The name of the database file.")
+	dirPtr := flag.String("dir", "/var/snap/redis/1446", "The directory to store the database files.")
+	dbfilenamePtr := flag.String("dbfilename", "dump.rdb", "The name of the database file.")
 
 	flag.Parse()
 

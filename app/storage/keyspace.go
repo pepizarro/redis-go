@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 )
@@ -38,9 +39,35 @@ func NewKeySpace(config *Config) *KeySpace {
 		}
 	}()
 
-	go ks.LogKeySpace()
+	// go ks.LogKeySpace()
+	ks.LoadSnapshots()
 
 	return ks
+}
+
+func (k *KeySpace) LoadSnapshots() {
+	// Load snapshots from disk
+	k.mu.Lock()
+	defer k.mu.Unlock()
+
+	rdbFile := k.config.Dir + "/" + k.config.DBfilename
+	data, err := os.ReadFile(rdbFile)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	fmt.Println("Loading RDB file...")
+	rdbStruct, err := newRdb(data)
+	if err != nil {
+		fmt.Println("Error reading rdb: ", err)
+		return
+	}
+
+	k.keyspace = rdbStruct.KeyValues
+
+	fmt.Println("RDB: ", rdbStruct)
+
 }
 
 func (k *KeySpace) cleanup() {
@@ -96,6 +123,19 @@ func (k *KeySpace) Get(key string) ([]byte, error) {
 	}
 
 	return nil, fmt.Errorf("Key not found: %s", key)
+}
+
+func (k *KeySpace) GetAllKeys() ([]string, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	var keys []string
+	for k, _ := range k.keyspace {
+		keys = append(keys, k)
+	}
+
+	return keys, nil
+
 }
 
 func (k *KeySpace) Delete(key string) {

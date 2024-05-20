@@ -32,6 +32,8 @@ func (r *RESP) GetCommand(buffer []byte) (string, error) {
 		return "get", nil
 	case "config":
 		return "config", nil
+	case "keys":
+		return "keys", nil
 
 	default:
 		return "", fmt.Errorf("Unknown command: %s", command)

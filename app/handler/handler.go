@@ -14,6 +14,7 @@ const (
 	SET    = "set"
 	GET    = "get"
 	CONFIG = "config"
+	KEYS   = "keys"
 )
 
 type Handler struct {
@@ -32,6 +33,7 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 	command, err := h.parser.GetCommand(buffer)
 	if err != nil {
 		fmt.Println("Error getting command: ", err)
+		conn.Close()
 		return
 	}
 
@@ -46,8 +48,12 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.GetHandler(conn, buffer)
 	case CONFIG:
 		h.ConfigHandler(conn, buffer)
+	case KEYS:
+		h.KeysHandler(conn, buffer)
 	default:
 		fmt.Println("Unknown command: ", command)
+		conn.Close()
+		return
 	}
 }
 
@@ -110,6 +116,36 @@ func (h *Handler) GetHandler(conn net.Conn, buffer []byte) {
 	_, err = conn.Write([]byte(response))
 	if err != nil {
 		fmt.Println("Error writing to client: ", err)
+		return
+	}
+}
+
+func (h *Handler) KeysHandler(conn net.Conn, buffer []byte) {
+
+	params, err := h.parser.GetParams(buffer)
+	if err != nil {
+		fmt.Println("Error getting params in KeysHandler: ", err)
+		return
+	}
+
+	if string(params[len(params)-2][0]) != "*" {
+		fmt.Println("Param not recognized")
+		return
+	}
+
+	keys, err := h.store.GetAllKeys()
+	if err != nil {
+		return
+	}
+
+	var keysArray [][]byte
+	for _, key := range keys {
+		keysArray = append(keysArray, h.parser.WriteString(key))
+	}
+
+	keysByteArray := h.parser.WriteArray(keysArray)
+	_, err = conn.Write(keysByteArray)
+	if err != nil {
 		return
 	}
 }

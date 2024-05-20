@@ -8,7 +8,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Dir:        "/tmp",
-		DBfilename: "db",
+		DBfilename: "dump.rdb",
 	}
 }
 
