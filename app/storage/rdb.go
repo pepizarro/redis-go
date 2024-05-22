@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/binary"
 	"fmt"
+	"time"
 )
 
 const (
@@ -167,9 +168,21 @@ func readKeyValue(ammount int, file *rdb, data []byte) int {
 
 	buf := data
 	for i := 0; i < ammount; i++ {
+		fmt.Println("Buf in readKeyValue")
+		printHex(buf)
+		firstByte := buf[0]
+		expireTime := time.Time{}
+		if firstByte == EXPIRE_TIME {
+			expireTime, buf = readExpireTime(buf[1:])
+		} else if firstByte == EXPIRE_TIME_MS {
+			expireTime, buf = readExpireTimeMs(buf[1:])
+		}
+
+		fmt.Println("Buf in readKeyValue AFTER")
+		printHex(buf)
 		valueType := buf[0]
 		if valueType != STRING_ENCODING {
-			fmt.Println("Value type not supported: ", valueType)
+			fmt.Println("Not a string encoding")
 			return 0
 		}
 
@@ -180,10 +193,31 @@ func readKeyValue(ammount int, file *rdb, data []byte) int {
 
 		buf = secondBuf
 		fmt.Println("Key: ", key, "\nValue: ", value)
-		file.KeyValues[string(key)] = item{value: value}
+		file.KeyValues[string(key)] = item{value: value, expiration: expireTime}
 	}
 
 	return len(data) - len(buf)
+}
+
+func readExpireTime(data []byte) (time.Time, []byte) {
+	// read the expire time
+	timeBytes := data[:5]
+
+	// convert the bytes to a time.Time
+	timeInt := binary.LittleEndian.Uint32(timeBytes)
+	expireTime := time.Unix(int64(timeInt), 0)
+
+	return expireTime, data[4:]
+}
+
+func readExpireTimeMs(data []byte) (time.Time, []byte) {
+	// read the expire time in milliseconds
+	timeBytes := data[:9]
+
+	timeInt := binary.LittleEndian.Uint64(timeBytes)
+	expireTime := time.UnixMilli(int64(timeInt))
+
+	return expireTime, data[8:]
 }
 
 func printHex(data []byte) {
