@@ -21,23 +21,16 @@ func (r *RESP) GetCommand(buffer []byte) (string, error) {
 	command := strings.ToLower(string(lines[2]))
 
 	// check if exists, use an enum?
-	switch command {
-	case "ping":
-		return "ping", nil
-	case "echo":
-		return "echo", nil
-	case "set":
-		return "set", nil
-	case "get":
-		return "get", nil
-	case "config":
-		return "config", nil
-	case "keys":
-		return "keys", nil
+	commands := []string{"ping", "echo", "set", "get", "config", "keys", "type"}
 
-	default:
-		return "", fmt.Errorf("Unknown command: %s", command)
+	// check if it's in the slice
+	for _, item := range commands {
+		if item == command {
+			return command, nil
+		}
 	}
+
+	return "", fmt.Errorf("Invalid command: %s", command)
 }
 
 func (r *RESP) GetSubCommand(buffer []byte) (string, error) {
@@ -94,6 +87,22 @@ func (r *RESP) GetArgs(buffer []byte, start int) (map[string][]byte, error) {
 	}
 
 	return args, nil
+}
+
+func (r *RESP) GetType(buffer []byte) (string, error) {
+	fmt.Println("In GetType, buffer: ", buffer)
+	// valueType := buffer[0]
+
+	// switch valueType {
+	// case '+':
+	// 	return "string", nil
+	// case '~':
+	// 	return "set", nil
+	// case '%':
+	// 	return "hash", nil
+	// }
+
+	return "string", nil
 }
 
 func (r *RESP) WriteString(s string) []byte {

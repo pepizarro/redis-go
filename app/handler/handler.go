@@ -15,6 +15,7 @@ const (
 	GET    = "get"
 	CONFIG = "config"
 	KEYS   = "keys"
+	TYPE   = "type"
 )
 
 type Handler struct {
@@ -50,6 +51,9 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.ConfigHandler(conn, buffer)
 	case KEYS:
 		h.KeysHandler(conn, buffer)
+	case TYPE:
+		h.TypeHandler(conn, buffer)
+
 	default:
 		fmt.Println("Unknown command: ", command)
 		conn.Close()
