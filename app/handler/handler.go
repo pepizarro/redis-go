@@ -16,6 +16,8 @@ const (
 	CONFIG = "config"
 	KEYS   = "keys"
 	TYPE   = "type"
+
+	XADD = "xadd"
 )
 
 type Handler struct {
@@ -53,6 +55,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.KeysHandler(conn, buffer)
 	case TYPE:
 		h.TypeHandler(conn, buffer)
+	case XADD:
+		h.XaddHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)

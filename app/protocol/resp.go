@@ -14,23 +14,13 @@ func NewRESP() *RESP {
 }
 
 func (r *RESP) GetCommand(buffer []byte) (string, error) {
-	lines := bytes.Split(buffer, []byte{'\r', '\n'})
-	if len(lines) < 3 {
-		return "", fmt.Errorf("Invalid command: %s", buffer)
+	params, err := r.GetParams(buffer)
+	if err != nil {
+		return "", err
 	}
-	command := strings.ToLower(string(lines[2]))
+	command := strings.ToLower(string(params[2]))
 
-	// check if exists, use an enum?
-	commands := []string{"ping", "echo", "set", "get", "config", "keys", "type"}
-
-	// check if it's in the slice
-	for _, item := range commands {
-		if item == command {
-			return command, nil
-		}
-	}
-
-	return "", fmt.Errorf("Invalid command: %s", command)
+	return command, nil
 }
 
 func (r *RESP) GetSubCommand(buffer []byte) (string, error) {

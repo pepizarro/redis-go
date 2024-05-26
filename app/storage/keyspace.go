@@ -7,6 +7,15 @@ import (
 	"time"
 )
 
+const (
+	STRING = "string"
+	LIST   = "list"
+	SET    = "set"
+	ZSET   = "zset"
+	HASH   = "hash"
+	STREAM = "stream"
+)
+
 type KeySpace struct {
 	mu       sync.RWMutex
 	keyspace map[string]item
@@ -15,7 +24,8 @@ type KeySpace struct {
 
 type item struct {
 	// mu         sync.RWMutex
-	value      []byte
+	value      any
+	valueType  string
 	expiration time.Time
 }
 
@@ -90,7 +100,7 @@ func (k *KeySpace) LogKeySpace() {
 		k.mu.RLock()
 		fmt.Println("KeySpace: ")
 		for key, item := range k.keyspace {
-			fmt.Println(key, ":", string(item.value))
+			fmt.Println(key, ":", string(item.value.([]byte)))
 			if item.expiration != (time.Time{}) {
 				fmt.Println("  Expiration: ", item.expiration)
 			}
@@ -102,15 +112,15 @@ func (k *KeySpace) LogKeySpace() {
 	}
 }
 
-func (k *KeySpace) Set(key string, value []byte) {
+func (k *KeySpace) Set(key string, valueType string, value any) {
 	k.mu.Lock()
-	k.keyspace[key] = item{value: value}
-	k.mu.Unlock()
+	defer k.mu.Unlock()
+	k.keyspace[key] = item{value: value, valueType: valueType}
 }
 
-func (k *KeySpace) SetWithExpiration(key string, value []byte, expiration time.Time) {
+func (k *KeySpace) SetWithExpiration(key string, valueType string, value []byte, expiration time.Time) {
 	k.mu.Lock()
-	k.keyspace[key] = item{value: value, expiration: expiration}
+	k.keyspace[key] = item{value: value, valueType: valueType, expiration: expiration}
 	k.mu.Unlock()
 }
 
@@ -118,8 +128,13 @@ func (k *KeySpace) Get(key string) ([]byte, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	if item, exist := k.keyspace[key]; exist {
-		return item.value, nil
+	item, exist := k.keyspace[key]
+
+	if exist {
+		if item.valueType != STRING {
+			return nil, fmt.Errorf("Invalid type: %s", item.valueType)
+		}
+		return item.value.([]byte), nil
 	}
 
 	return nil, fmt.Errorf("Key not found: %s", key)
@@ -135,7 +150,19 @@ func (k *KeySpace) GetAllKeys() ([]string, error) {
 	}
 
 	return keys, nil
+}
 
+func (k *KeySpace) GetType(key string) (string, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	item, exist := k.keyspace[key]
+
+	if exist {
+		return item.valueType, nil
+	}
+
+	return "", fmt.Errorf("Key not found: %s", key)
 }
 
 func (k *KeySpace) Delete(key string) {

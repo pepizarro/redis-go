@@ -69,15 +69,14 @@ func newRdb(data []byte) (*rdb, error) {
 
 	for i := 0; i < len(buf); i++ {
 		b := buf[i]
-		fmt.Printf("buf[%d]: %x\n", i, buf[i])
+		// fmt.Printf("buf[%d]: %x\n", i, buf[i])
 		if b == EOF {
-			fmt.Println("EOF")
 			break
 		}
 
 		if op, ok := opCodes[b]; ok {
 			i += op(newRDB, buf[i+1:])
-			fmt.Println("i: ", i)
+			// fmt.Println("i: ", i)
 		}
 	}
 
@@ -135,14 +134,12 @@ func readRedisString(data []byte) ([]byte, []byte) {
 }
 
 func readAux(file *rdb, data []byte) int {
-	fmt.Println("\n\nReading AUX")
 
 	buf := data
 
 	key, buf := readRedisString(buf)
 	value, buf := readRedisString(buf)
 
-	fmt.Println("Key: ", string(key), "value: ")
 	file.auxiliaryFields[string(key)] = value
 
 	if len(buf) == 0 {
@@ -152,7 +149,6 @@ func readAux(file *rdb, data []byte) int {
 }
 
 func readResizeDB(file *rdb, data []byte) int {
-	fmt.Println("\n\nReading RESIZE_DB")
 	buf := data[2:]
 	ammount := int(data[0])
 	// the first byte is the ammount of keys
@@ -168,8 +164,6 @@ func readKeyValue(ammount int, file *rdb, data []byte) int {
 
 	buf := data
 	for i := 0; i < ammount; i++ {
-		fmt.Println("Buf in readKeyValue")
-		printHex(buf)
 		firstByte := buf[0]
 		expireTime := time.Time{}
 		if firstByte == EXPIRE_TIME {
@@ -178,8 +172,6 @@ func readKeyValue(ammount int, file *rdb, data []byte) int {
 			expireTime, buf = readExpireTimeMs(buf[1:])
 		}
 
-		fmt.Println("Buf in readKeyValue AFTER")
-		printHex(buf)
 		valueType := buf[0]
 		if valueType != STRING_ENCODING {
 			fmt.Println("Not a string encoding")
@@ -192,8 +184,7 @@ func readKeyValue(ammount int, file *rdb, data []byte) int {
 		value, secondBuf := readRedisString(newBuf)
 
 		buf = secondBuf
-		fmt.Println("Key: ", key, "\nValue: ", value)
-		file.KeyValues[string(key)] = item{value: value, expiration: expireTime}
+		file.KeyValues[string(key)] = item{value: value, valueType: "string", expiration: expireTime}
 	}
 
 	return len(data) - len(buf)

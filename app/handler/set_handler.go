@@ -28,7 +28,7 @@ func (h *Handler) SetHandler(conn net.Conn, buffer []byte) {
 	fmt.Println("args: ", args)
 
 	if len(args) == 0 {
-		h.store.Set(key, value)
+		h.store.Set(key, "string", value)
 	}
 
 	// Check for known arguments
@@ -53,7 +53,7 @@ func (h *Handler) SetHandler(conn net.Conn, buffer []byte) {
 				timeToAdd = time.Duration(expTime) * time.Millisecond
 			}
 
-			h.store.SetWithExpiration(key, value, time.Now().Add(timeToAdd))
+			h.store.SetWithExpiration(key, "string", value, time.Now().Add(timeToAdd))
 		}
 	}
 

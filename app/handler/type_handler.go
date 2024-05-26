@@ -15,18 +15,17 @@ func (h *Handler) TypeHandler(conn net.Conn, buffer []byte) {
 	}
 	key := string(params[4])
 
-	value, err := h.store.Get(key)
+	valueType, err := h.store.GetType(key)
 	if err != nil {
-		none := h.parser.WriteString("none")
-		_, err := conn.Write([]byte(none))
+		_, err = conn.Write(h.parser.WriteString("none"))
 		if err != nil {
-			return
+			fmt.Println("Error writing to client: ", err)
 		}
-		return
 	}
+	fmt.Println("Key: ", key)
+	fmt.Println("Type: ", valueType)
 
-	valueType, err := h.parser.GetType(value)
-	_, err = conn.Write([]byte(h.parser.WriteString(valueType)))
+	_, err = conn.Write(h.parser.WriteString(valueType))
 	if err != nil {
 		return
 	}
