@@ -40,9 +40,14 @@ func (h *Handler) XaddHandler(conn net.Conn, buffer []byte) {
 	err = h.store.SetStream(key, entry)
 	if err != nil {
 		fmt.Println("Error setting stream: ", err)
-		_, err = conn.Write(h.parser.WriteString(err.Error()))
+		_, err = conn.Write(h.parser.WriteError(err.Error()))
+		if err != nil {
+			fmt.Println("Error writing to client: ", err)
+		}
+		return
 	}
 
+	fmt.Println("Returning Entry ID: ", entryID)
 	_, err = conn.Write(h.parser.WriteString(entryID))
 	if err != nil {
 		fmt.Println("Error writing to client: ", err)

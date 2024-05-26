@@ -8,6 +8,7 @@ type Parser interface {
 	GetType(buffer []byte) (string, error)
 	WriteString(string) []byte
 	WriteOk() []byte
+	WriteError(string) []byte
 	WriteNull() []byte
 	WriteArray([][]byte) []byte
 }

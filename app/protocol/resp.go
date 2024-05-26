@@ -108,6 +108,10 @@ func (r *RESP) WriteOk() []byte {
 	return []byte("+OK\r\n")
 }
 
+func (r *RESP) WriteError(message string) []byte {
+	return []byte(fmt.Sprintf("-%s\r\n", message))
+}
+
 func (r *RESP) WriteArray(array [][]byte) []byte {
 	length := len(array)
 
