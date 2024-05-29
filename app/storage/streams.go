@@ -68,7 +68,28 @@ func (k *KeySpace) GetEntriesStartingAt(key string, start string) ([]Entry, erro
 		return nil, fmt.Errorf("Invalid type: %s", i.valueType)
 	}
 
-	return nil, nil
+	startMs, startSeq, err := parseEntryId(start)
+	if err != nil {
+		return nil, err
+	}
+
+	stream := i.value.(Stream)
+	entries := stream.entries
+	var newEntries []Entry
+	for _, entry := range entries {
+		ms, seq, err := parseEntryId(entry.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		if ms >= startMs {
+			if seq >= startSeq {
+				newEntries = append(newEntries, entry)
+			}
+		}
+	}
+
+	return newEntries, nil
 }
 
 func (k *KeySpace) GetEntriesEndingAt(key string, end string) ([]Entry, error) {
