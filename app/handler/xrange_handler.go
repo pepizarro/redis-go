@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+
+	"github.com/codecrafters-io/redis-starter-go/app/storage"
 )
 
 func (h *Handler) XrangeHandler(conn net.Conn, buffer []byte) {
@@ -24,9 +26,19 @@ func (h *Handler) XrangeHandler(conn net.Conn, buffer []byte) {
 	start := completeEntryID(string(params[6]))
 	end := completeEntryID(string(params[8]))
 
-	entries, err := h.store.GetEntriesInRange(key, start, end)
+	var entries []storage.Entry
+	if start == "-" {
+		entries, err = h.store.GetEntriesEndingAt(key, end)
+	} else if end == "+" {
+		entries, err = h.store.GetEntriesStartingAt(key, start)
+	} else if start == "-" && end == "+" {
+		entries, err = h.store.GetAllEntries(key)
+	} else {
+		entries, err = h.store.GetEntriesInRange(key, start, end)
+	}
+
 	if err != nil {
-		fmt.Println("Error getting stream in range: ", err)
+		fmt.Println("Error getting stream ending at: ", err)
 		_, err = conn.Write(h.parser.WriteError(err.Error()))
 		if err != nil {
 			fmt.Println("Error writing to client: ", err)

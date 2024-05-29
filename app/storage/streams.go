@@ -39,17 +39,75 @@ func (k *KeySpace) GetStream(key string) (Stream, error) {
 	return i.value.(Stream), nil
 }
 
-// func (k *KeySpace) GetStreamStartingAt(key string, start string) (Stream, error) {
-//
-//
-//
-// 	return Stream{}, nil
-// }
-//
-// func (k *KeySpace) GetStreamEndingAt(key string, start string) (Stream, error) {
-//
-// 	return Stream{}, nil
-// }
+func (k *KeySpace) GetAllEntries(key string) ([]Entry, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	i, exists := k.keyspace[key]
+	if !exists {
+		return nil, fmt.Errorf("Key not found: %s", key)
+	}
+
+	if i.valueType != STREAM {
+		return nil, fmt.Errorf("Invalid type: %s", i.valueType)
+	}
+
+	return i.value.(Stream).entries, nil
+}
+
+func (k *KeySpace) GetEntriesStartingAt(key string, start string) ([]Entry, error) {
+
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	i, exists := k.keyspace[key]
+	if !exists {
+		return nil, fmt.Errorf("Key not found: %s", key)
+	}
+	if i.valueType != STREAM {
+		return nil, fmt.Errorf("Invalid type: %s", i.valueType)
+	}
+
+	return nil, nil
+}
+
+func (k *KeySpace) GetEntriesEndingAt(key string, end string) ([]Entry, error) {
+
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	i, exists := k.keyspace[key]
+	if !exists {
+		return nil, fmt.Errorf("Key not found: %s", key)
+	}
+	if i.valueType != STREAM {
+		return nil, fmt.Errorf("Invalid type: %s", i.valueType)
+	}
+
+	endMs, endSeq, err := parseEntryId(end)
+	if err != nil {
+		return nil, err
+	}
+
+	stream := i.value.(Stream)
+	entries := stream.entries
+	var newEntries []Entry
+	for _, entry := range entries {
+		ms, seq, err := parseEntryId(entry.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		if ms <= endMs {
+			if seq <= endSeq {
+				newEntries = append(newEntries, entry)
+			}
+		}
+
+	}
+
+	return newEntries, nil
+}
 
 func (k *KeySpace) GetEntriesInRange(key string, start string, end string) ([]Entry, error) {
 	k.mu.RLock()
