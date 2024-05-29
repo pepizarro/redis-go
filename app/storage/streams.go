@@ -55,6 +55,49 @@ func (k *KeySpace) GetAllEntries(key string) ([]Entry, error) {
 	return i.value.(Stream).entries, nil
 }
 
+func (k *KeySpace) GetEntriesAfter(key string, start string) ([]Entry, error) {
+
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	i, exists := k.keyspace[key]
+	if !exists {
+		return nil, fmt.Errorf("Key not found: %s", key)
+	}
+	if i.valueType != STREAM {
+		return nil, fmt.Errorf("Invalid type: %s", i.valueType)
+	}
+
+	startMs, startSeq, err := parseEntryId(start)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("StartMs: ", startMs)
+
+	stream := i.value.(Stream)
+	entries := stream.entries
+	var newEntries []Entry
+	for _, entry := range entries {
+		ms, seq, err := parseEntryId(entry.Id)
+		fmt.Println("checking entry: ", entry)
+		fmt.Println("ms: ", ms)
+		fmt.Println("seq: ", seq)
+		fmt.Println("startMs: ", startMs)
+		if err != nil {
+			return nil, err
+		}
+
+		if ms >= startMs {
+			if seq > startSeq {
+				newEntries = append(newEntries, entry)
+			}
+		}
+	}
+
+	return newEntries, nil
+}
+
 func (k *KeySpace) GetEntriesStartingAt(key string, start string) ([]Entry, error) {
 
 	k.mu.RLock()
