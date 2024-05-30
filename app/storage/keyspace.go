@@ -98,18 +98,40 @@ func (k *KeySpace) GetConfig() *Config {
 func (k *KeySpace) LogKeySpace() {
 	for {
 		k.mu.RLock()
-		fmt.Println("KeySpace: ")
+		fmt.Println("\n --------------------- \n")
+		fmt.Println("\n KeySpace: ")
 		for key, item := range k.keyspace {
+			if item.valueType == STREAM {
+				fmt.Println(key, ":")
+				for _, entry := range item.value.(Stream).entries {
+					fmt.Println("  ", entry.Id, ":", entry.Values)
+				}
+				continue
+			}
 			fmt.Println(key, ":", string(item.value.([]byte)))
 			if item.expiration != (time.Time{}) {
 				fmt.Println("  Expiration: ", item.expiration)
 			}
 
 		}
+		fmt.Println("\n --------------------- \n")
 		k.mu.RUnlock()
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
+}
+func (k *KeySpace) LogOnce() {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	fmt.Println("\n --------------------- \n")
+	fmt.Println("\n KeySpace: ")
+	for key, item := range k.keyspace {
+		fmt.Println(key)
+		fmt.Println(item)
+	}
+
+	fmt.Println("\n --------------------- \n")
+
 }
 
 func (k *KeySpace) Set(key string, valueType string, value any) {
