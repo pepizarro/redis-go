@@ -48,9 +48,11 @@ func (r *RESP) GetSubCommand(buffer []byte) (string, error) {
 }
 
 func (r *RESP) GetParams(buffer []byte) ([][]byte, error) {
-	params := bytes.Split(buffer, []byte{'\r', '\n'})
+	newBuffer := make([]byte, len(buffer))
+	copy(newBuffer, buffer)
+	params := bytes.Split(newBuffer, []byte{'\r', '\n'})
 	if len(params) < 3 {
-		return nil, fmt.Errorf("Invalid command: %s", buffer)
+		return nil, fmt.Errorf("Invalid command: %s", newBuffer)
 	}
 	return params, nil
 }

@@ -114,7 +114,7 @@ func (h *Handler) GetHandler(conn net.Conn, buffer []byte) {
 
 	item, err := h.store.Get(key)
 
-	fmt.Println("Getting key: ", key, err)
+	fmt.Println("Getting key: ", key, item)
 	if err != nil {
 		nullBulkString := h.parser.WriteNull()
 		fmt.Println("Error getting key, writing: ", nullBulkString)

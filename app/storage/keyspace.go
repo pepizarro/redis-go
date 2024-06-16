@@ -42,12 +42,12 @@ func NewKeySpace(config *Config) *KeySpace {
 		config:   config,
 	}
 
-	go func() {
-		for {
-			ks.cleanup()
-			time.Sleep(1 * time.Millisecond)
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		ks.cleanup()
+	// 		time.Sleep(1 * time.Millisecond)
+	// 	}
+	// }()
 
 	// go ks.LogKeySpace()
 	ks.LoadSnapshots()
@@ -156,6 +156,12 @@ func (k *KeySpace) Get(key string) ([]byte, error) {
 		if item.valueType != STRING {
 			return nil, fmt.Errorf("Invalid type: %s", item.valueType)
 		}
+
+		if item.expiration != (time.Time{}) && time.Now().After(item.expiration) {
+			delete(k.keyspace, key)
+			return nil, fmt.Errorf("Key not found: %s", key)
+		}
+
 		return item.value.([]byte), nil
 	}
 

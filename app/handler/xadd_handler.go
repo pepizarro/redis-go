@@ -104,7 +104,6 @@ func (h *Handler) XaddHandler(conn net.Conn, buffer []byte) {
 
 	fmt.Println("\n\nADDED ENTRY: ", entry, " TO KEY: ", key, "\n\n\n")
 
-	h.store.LogOnce()
 	_, err = conn.Write(h.parser.WriteString(entryID))
 	if err != nil {
 		fmt.Println("Error writing to client: ", err)
