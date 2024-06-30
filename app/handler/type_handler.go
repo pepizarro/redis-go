@@ -21,6 +21,7 @@ func (h *Handler) TypeHandler(conn net.Conn, buffer []byte) {
 		if err != nil {
 			fmt.Println("Error writing to client: ", err)
 		}
+		return
 	}
 	fmt.Println("Key: ", key)
 	fmt.Println("Type: ", valueType)

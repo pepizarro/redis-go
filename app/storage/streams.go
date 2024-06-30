@@ -60,10 +60,6 @@ func (k *KeySpace) GetEntriesAfter(key string, start string) ([]Entry, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	for key, item := range k.keyspace {
-		fmt.Println("Key: ", key, "Item: ", item)
-	}
-
 	i, exists := k.keyspace[key]
 	if !exists {
 		return nil, fmt.Errorf("Key not found: %s", key)
@@ -311,15 +307,11 @@ func (k *KeySpace) SetEntryWithID(key string, id string, entry Entry) (string, e
 		streamEntries = append(streamEntries, entry)
 		k.keyspace[key] = item{value: Stream{entries: streamEntries}, valueType: STREAM}
 
-		fmt.Println("Added entry to stream", entryID, entry)
-		fmt.Println("KeySpace: ", k.keyspace)
 		return entryID, nil
 	}
 
 	entry.Id = id
 	k.keyspace[key] = item{value: Stream{entries: []Entry{entry}}, valueType: STREAM}
-	fmt.Println("Added entry to stream", id, entry)
-	fmt.Println("KeySpace: ", k.keyspace)
 
 	return entry.Id, nil
 }

@@ -66,6 +66,10 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 
 	default:
 		fmt.Println("Unknown command: ", command)
+		_, err = conn.Write(h.parser.WriteError("Unknown command"))
+		if err != nil {
+			fmt.Println("Error writing to client: ", err)
+		}
 		conn.Close()
 		return
 	}
