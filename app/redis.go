@@ -23,7 +23,7 @@ func NewRedisServer(address string, port string, handler *handler.Handler) *Redi
 
 func (rs *RedisServer) Start() error {
 
-	listener, err := net.Listen("tcp", "0.0.0.0:6379")
+	listener, err := net.Listen("tcp", rs.address+":"+rs.port)
 	if err != nil {
 		fmt.Println("Error starting server in: ", rs.address, rs.port)
 		return err

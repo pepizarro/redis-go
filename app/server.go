@@ -15,6 +15,7 @@ func main() {
 	// get flag --filename
 	dirPtr := flag.String("dir", "/var/snap/redis/1568", "The directory to store the database files.")
 	dbfilenamePtr := flag.String("dbfilename", "dump.rdb", "The name of the database file.")
+	port := flag.String("port", "6379", "The port to listen on.")
 
 	flag.Parse()
 
@@ -25,7 +26,7 @@ func main() {
 
 	handler := handler.NewHandler(store, parser)
 
-	server := NewRedisServer("0.0.0.0", "6379", handler)
+	server := NewRedisServer("0.0.0.0", *port, handler)
 
 	fmt.Println("Starting redis server...")
 
