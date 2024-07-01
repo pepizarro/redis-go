@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/codecrafters-io/redis-starter-go/app/storage"
 )
 
 func (h *Handler) XreadHandler(conn net.Conn, buffer []byte) {
@@ -65,12 +67,32 @@ func (h *Handler) XreadHandler(conn net.Conn, buffer []byte) {
 	var response [][]byte
 
 	startTime := time.Now()
+
+	lastIDs := make(map[string]string)
+	for key, start := range keys {
+		if start == "$" {
+			lastID, err := h.store.GetLastEntryID(key)
+			if err != nil {
+				_, err = conn.Write(h.parser.WriteNull())
+				continue
+			}
+			lastIDs[key] = lastID
+		}
+	}
+
 	for {
 		for key, start := range keys {
 			start = completeEntryID(string(start))
 
-			entries, err := h.store.GetEntriesAfter(key, start)
-			// fmt.Println("entries: ", entries)
+			var entries []storage.Entry
+
+			if start == "$" {
+				start = lastIDs[key]
+				entries, err = h.store.GetEntriesAfter(key, start)
+			} else {
+				entries, err = h.store.GetEntriesAfter(key, start)
+			}
+
 			if err != nil {
 				if block {
 					continue
