@@ -20,6 +20,8 @@ const (
 	XADD   = "xadd"
 	XRANGE = "xrange"
 	XREAD  = "xread"
+
+	INFO = "info"
 )
 
 type Handler struct {
@@ -63,6 +65,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.XrangeHandler(conn, buffer)
 	case XREAD:
 		h.XreadHandler(conn, buffer)
+	case INFO:
+		h.InfoHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)

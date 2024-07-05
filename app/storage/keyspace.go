@@ -55,6 +55,24 @@ func NewKeySpace(config *Config) *KeySpace {
 	return ks
 }
 
+func (k *KeySpace) GetInfo(section string) (map[string]string, error) {
+
+	if section == "" {
+		// Return all info
+		return nil, nil
+	}
+
+	switch section {
+	case "replication":
+		return map[string]string{
+			"role": "master",
+		}, nil
+
+	}
+
+	return nil, fmt.Errorf("Invalid section: %s", section)
+}
+
 func (k *KeySpace) LoadSnapshots() {
 	// Load snapshots from disk
 	k.mu.Lock()
