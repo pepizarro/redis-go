@@ -16,6 +16,7 @@ func main() {
 	dirPtr := flag.String("dir", "/var/snap/redis/1568", "The directory to store the database files.")
 	dbfilenamePtr := flag.String("dbfilename", "dump.rdb", "The name of the database file.")
 	port := flag.String("port", "6379", "The port to listen on.")
+	replicaOf := flag.String("replicaof", "", "The address of the master server.")
 
 	flag.Parse()
 

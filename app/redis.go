@@ -61,7 +61,7 @@ func route(conn net.Conn, handler *handler.Handler) {
 			return
 		}
 
-		fmt.Println("\nReceived:\n", string(buffer[:n]))
+		// fmt.Println("\nReceived:\n", string(buffer[:n]))
 
 		handler.Handle(conn, buffer[:n])
 
