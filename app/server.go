@@ -20,7 +20,7 @@ func main() {
 
 	flag.Parse()
 
-	config := storage.NewConfig(*dirPtr, *dbfilenamePtr)
+	config := storage.NewConfig(*dirPtr, *dbfilenamePtr, *replicaOf)
 
 	store := storage.NewKeySpace(config)
 	parser := protocol.NewRESP()
