@@ -142,7 +142,7 @@ func (h *Handler) XreadHandler(conn net.Conn, buffer []byte) {
 		}
 	}
 
-	fmt.Println("Response: \n", response)
+	// fmt.Println("Response: \n", response)
 	if response == nil {
 		_, _ = conn.Write(h.parser.WriteNull())
 		return

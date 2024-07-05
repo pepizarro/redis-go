@@ -64,9 +64,7 @@ func (k *KeySpace) GetInfo(section string) (map[string]string, error) {
 
 	switch section {
 	case "replication":
-		return map[string]string{
-			"role": k.config.Role,
-		}, nil
+		return k.config.GetReplicationInfo(), nil
 
 	}
 

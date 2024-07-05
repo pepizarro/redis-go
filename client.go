@@ -28,12 +28,12 @@ func main() {
 	// Read and process data from the server
 	response := make([]byte, 1024)
 	for {
-		n, err := conn.Read(response)
+		_, err := conn.Read(response)
 		if err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
 
-		fmt.Println("Response from server:", string(response[:n]))
+		// fmt.Println("Response from server:", string(response[:n]))
 	}
 }

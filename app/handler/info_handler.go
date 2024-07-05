@@ -29,15 +29,16 @@ func (h *Handler) InfoHandler(conn net.Conn, buffer []byte) {
 	}
 
 	fmt.Println("Info: ", info)
-	var response [][]byte
+	var response string
 	for key, value := range info {
-		response = append(response, h.parser.WriteString(fmt.Sprintf("%s:%s", key, value)))
+		response = response + key + ":" + value + "\r\n"
 	}
 
-	_, err = conn.Write(response[0])
+	fmt.Println("Response: ", string(response))
+
+	_, err = conn.Write(h.parser.WriteString(response))
 	if err != nil {
 		fmt.Println("Error writing to client: ", err)
 		return
 	}
-
 }
