@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/handler"
 )
@@ -32,6 +33,8 @@ func (rs *RedisServer) Start() error {
 	defer listener.Close()
 
 	fmt.Println("Server started at: ", rs.address, rs.port)
+
+	go connectToMaster(rs.handler)
 
 	for {
 
@@ -64,6 +67,32 @@ func route(conn net.Conn, handler *handler.Handler) {
 		// fmt.Println("\nReceived:\n", string(buffer[:n]))
 
 		handler.Handle(conn, buffer[:n])
+
+	}
+}
+
+func connectToMaster(handler *handler.Handler) {
+	if handler.GetRole() != "slave" {
+		fmt.Println("Not a replica, skipping connection to master")
+		return
+	}
+
+	for {
+		fmt.Println("Checking connection to master...")
+
+		if handler.GetRole() != "slave" {
+			fmt.Println("Not a replica, skipping connection to master")
+			continue
+		}
+
+		connectionMaster := handler.CheckConnectionToMaster()
+		if connectionMaster != nil {
+			fmt.Println("Error connecting to master: ", connectionMaster)
+		} else {
+			fmt.Println("Connected to master")
+		}
+
+		time.Sleep(5 * time.Second)
 
 	}
 }

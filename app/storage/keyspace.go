@@ -55,6 +55,10 @@ func NewKeySpace(config *Config) *KeySpace {
 	return ks
 }
 
+func (k *KeySpace) GetMasterAddress() string {
+	return k.config.MasterAddr + ":" + k.config.MasterPort
+}
+
 func (k *KeySpace) GetInfo(section string) (map[string]string, error) {
 
 	if section == "" {
@@ -132,10 +136,10 @@ func (k *KeySpace) LogKeySpace() {
 		}
 		fmt.Println("\n --------------------- \n")
 		k.mu.RUnlock()
-
 		time.Sleep(1 * time.Second)
 	}
 }
+
 func (k *KeySpace) LogOnce() {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
@@ -145,9 +149,7 @@ func (k *KeySpace) LogOnce() {
 		fmt.Println(key)
 		fmt.Println(item)
 	}
-
 	fmt.Println("\n --------------------- \n")
-
 }
 
 func (k *KeySpace) Set(key string, valueType string, value any) {
