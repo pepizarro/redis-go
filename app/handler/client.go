@@ -40,9 +40,27 @@ func (h *Handler) SetConnectionToMaster(conn net.Conn) error {
 	fmt.Println("Setting connection to master: ", conn)
 	listeningPort := h.config.getListeningPort()
 
-	buffer := make([]byte, 1024)
+	var messages [][]byte
+	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("PING")}))
+	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("listening-port"), h.parser.WriteString(listeningPort)}))
+	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("capa"), h.parser.WriteString("psync2")}))
+	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("PSYNC"), h.parser.WriteString("?"), h.parser.WriteString("-1")}))
 
-	buffer = h.parser.WriteArray([][]byte{h.parser.WriteString("PING")})
+	for _, message := range messages {
+		err := h.sendAndRead(conn, message)
+		if err != nil {
+			return fmt.Errorf("Error connecting to master: %s", err)
+		}
+	}
+
+	if conn != nil {
+		defer conn.Close()
+	}
+
+	return nil
+}
+
+func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
 	_, err := conn.Write(buffer)
 	if err != nil {
 		return fmt.Errorf("Error writing to master: %s", err)
@@ -51,34 +69,6 @@ func (h *Handler) SetConnectionToMaster(conn net.Conn) error {
 	_, err = conn.Read(buffer)
 	if err != nil {
 		return fmt.Errorf("Error reading from master: %s", err)
-	}
-
-	buffer = h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("listening-port"), h.parser.WriteString(listeningPort)})
-	_, err = conn.Write(buffer)
-	if err != nil {
-		return fmt.Errorf("Error writing to master: %s", err)
-	}
-	fmt.Println("Sent REPLCONF listening-port to master ", listeningPort)
-	buffer = make([]byte, 1024)
-	_, err = conn.Read(buffer)
-	if err != nil {
-		return fmt.Errorf("Error reading from master: %s", err)
-	}
-
-	buffer = h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("capa"), h.parser.WriteString("psync2")})
-	_, err = conn.Write(buffer)
-	if err != nil {
-		return fmt.Errorf("Error writing to master: %s", err)
-	}
-	fmt.Println("Sent REPLCONF listening-port to master ", listeningPort)
-	buffer = make([]byte, 1024)
-	_, err = conn.Read(buffer)
-	if err != nil {
-		return fmt.Errorf("Error reading from master: %s", err)
-	}
-
-	if conn != nil {
-		defer conn.Close()
 	}
 
 	return nil
