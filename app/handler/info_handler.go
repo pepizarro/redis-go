@@ -19,13 +19,12 @@ func (h *Handler) InfoHandler(conn net.Conn, buffer []byte) {
 		section = string(params[4])
 	}
 
-	info, err := h.store.GetInfo(section)
-	if err != nil {
-		_, err = conn.Write(h.parser.WriteError(err.Error()))
-		if err != nil {
-			fmt.Println("Error writing to client: ", err)
-		}
-		return
+	var info map[string]string
+
+	switch section {
+	case "replication":
+		replicationInfo := h.config.getReplicationInfo()
+		info = replicationInfo
 	}
 
 	fmt.Println("Info: ", info)

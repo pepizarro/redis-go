@@ -20,12 +20,13 @@ func main() {
 
 	flag.Parse()
 
-	config := storage.NewConfig(*dirPtr, *dbfilenamePtr, *replicaOf)
+	StorageConfig := storage.NewConfig(*dirPtr, *dbfilenamePtr)
+	HandlerConfig := handler.NewHandlerConfig("0.0.0.0", *port, *replicaOf)
 
-	store := storage.NewKeySpace(config)
+	store := storage.NewKeySpace(StorageConfig)
 	parser := protocol.NewRESP()
 
-	handler := handler.NewHandler(store, parser)
+	handler := handler.NewHandler(store, parser, HandlerConfig)
 
 	server := NewRedisServer("0.0.0.0", *port, handler)
 

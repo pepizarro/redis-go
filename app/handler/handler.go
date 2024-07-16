@@ -22,18 +22,32 @@ const (
 	XREAD  = "xread"
 
 	INFO = "info"
+
+	REPLCONF = "replconf"
 )
 
 type Handler struct {
 	store  *storage.KeySpace
 	parser protocol.Parser
+	config *HandlerConfig
 }
 
-func NewHandler(store *storage.KeySpace, parser protocol.Parser) *Handler {
-	return &Handler{
+func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *HandlerConfig) *Handler {
+	newHandler := &Handler{
 		store:  store,
 		parser: parser,
+		config: config,
 	}
+
+	if newHandler.IsReplica() {
+		go newHandler.connectToMaster()
+	}
+
+	return newHandler
+}
+
+func (h *Handler) IsReplica() bool {
+	return h.config.IsReplica()
 }
 
 func (h *Handler) Handle(conn net.Conn, buffer []byte) {
@@ -67,6 +81,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.XreadHandler(conn, buffer)
 	case INFO:
 		h.InfoHandler(conn, buffer)
+	case REPLCONF:
+		h.ReplconfHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)
@@ -79,31 +95,7 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 	}
 }
 
-func (h *Handler) GetRole() string {
-	return h.store.GetConfig().Role
-}
-func (h *Handler) CheckConnectionToMaster() error {
-	// Stop the server
-	conn, err := net.Dial("tcp", h.store.GetMasterAddress())
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	_, err = conn.Write(h.parser.WriteArray([][]byte{h.parser.WriteString("PING")}))
-	if err != nil {
-		return fmt.Errorf("Error writing to master: %s", err)
-	}
-
-	return nil
-}
-
-func (h *Handler) GetMasterAddress() string {
-	return h.store.GetMasterAddress()
-}
-
 func (h *Handler) PingHandler(conn net.Conn, buffer []byte) {
-	// Write the data back to the client
 	_, err := conn.Write([]byte("+PONG\r\n"))
 	if err != nil {
 		fmt.Println("Error writing PONG to client: ", err)
@@ -133,7 +125,6 @@ func (h *Handler) EchoHandler(conn net.Conn, buffer []byte) {
 }
 
 func (h *Handler) GetHandler(conn net.Conn, buffer []byte) {
-	// Write the data back to the client
 
 	params, err := h.parser.GetParams(buffer)
 	if len(params) != 6 || err != nil {

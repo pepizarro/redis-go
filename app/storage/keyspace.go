@@ -19,7 +19,7 @@ const (
 type KeySpace struct {
 	mu       sync.RWMutex
 	keyspace map[string]item
-	config   *Config
+	config   *StorageConfig
 }
 
 type item struct {
@@ -29,13 +29,13 @@ type item struct {
 	expiration time.Time
 }
 
-func NewKeySpace(config *Config) *KeySpace {
+func NewKeySpace(config *StorageConfig) *KeySpace {
 
 	if config == nil {
 		config = DefaultConfig()
 	}
 
-	fmt.Println("Using config: ", config)
+	fmt.Println("Using StorageConfig: ", config)
 
 	ks := &KeySpace{
 		keyspace: make(map[string]item),
@@ -53,10 +53,6 @@ func NewKeySpace(config *Config) *KeySpace {
 	ks.LoadSnapshots()
 
 	return ks
-}
-
-func (k *KeySpace) GetMasterAddress() string {
-	return k.config.MasterAddr + ":" + k.config.MasterPort
 }
 
 func (k *KeySpace) GetInfo(section string) (map[string]string, error) {
@@ -111,7 +107,7 @@ func (k *KeySpace) cleanup() {
 	}
 }
 
-func (k *KeySpace) GetConfig() *Config {
+func (k *KeySpace) GetConfig() *StorageConfig {
 	return k.config
 }
 

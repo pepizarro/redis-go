@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/handler"
 )
@@ -14,7 +13,7 @@ type RedisServer struct {
 	handler *handler.Handler
 }
 
-func NewRedisServer(address string, port string, handler *handler.Handler) *RedisServer {
+func NewRedisServer(address, port string, handler *handler.Handler) *RedisServer {
 	return &RedisServer{
 		address: address,
 		port:    port,
@@ -25,16 +24,15 @@ func NewRedisServer(address string, port string, handler *handler.Handler) *Redi
 func (rs *RedisServer) Start() error {
 
 	listener, err := net.Listen("tcp", rs.address+":"+rs.port)
+
 	if err != nil {
-		fmt.Println("Error starting server in: ", rs.address, rs.port)
+		fmt.Println("Error starting server in: ", rs.address+":"+rs.port)
 		return err
 	}
 
 	defer listener.Close()
 
-	fmt.Println("Server started at: ", rs.address, rs.port)
-
-	go connectToMaster(rs.handler)
+	fmt.Println("Server started at: ", rs.address+":"+rs.port)
 
 	for {
 
@@ -57,42 +55,13 @@ func route(conn net.Conn, handler *handler.Handler) {
 		// Read data from the client
 		n, err := conn.Read(buffer)
 		if err != nil && err.Error() != "EOF" {
-			fmt.Println("Error:", err)
+			fmt.Println("Error reading connection:", err)
 			return
 		}
 		if n == 0 {
 			return
 		}
 
-		// fmt.Println("\nReceived:\n", string(buffer[:n]))
-
 		handler.Handle(conn, buffer[:n])
-
-	}
-}
-
-func connectToMaster(handler *handler.Handler) {
-	if handler.GetRole() != "slave" {
-		fmt.Println("Not a replica, skipping connection to master")
-		return
-	}
-
-	for {
-		fmt.Println("Checking connection to master...")
-
-		if handler.GetRole() != "slave" {
-			fmt.Println("Not a replica, skipping connection to master")
-			continue
-		}
-
-		connectionMaster := handler.CheckConnectionToMaster()
-		if connectionMaster != nil {
-			fmt.Println("Error connecting to master: ", connectionMaster)
-		} else {
-			fmt.Println("Connected to master")
-		}
-
-		time.Sleep(5 * time.Second)
-
 	}
 }
