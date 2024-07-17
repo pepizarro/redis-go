@@ -97,6 +97,10 @@ func (r *RESP) GetType(buffer []byte) (string, error) {
 	return "string", nil
 }
 
+func (r *RESP) WriteSimpleString(s string) []byte {
+	return []byte(fmt.Sprintf("+%s\r\n", s))
+}
+
 func (r *RESP) WriteString(s string) []byte {
 	length := len(s)
 	return []byte(fmt.Sprintf("$%d\r\n%s\r\n", length, s))
