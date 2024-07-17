@@ -13,9 +13,15 @@ func (h *Handler) ReplconfHandler(conn net.Conn, buffer []byte) {
 		return
 	}
 
-	if string(params[4]) == "listening-port" {
+	subCommand := string(params[4])
+	switch subCommand {
+	case "listening-port":
 		fmt.Println("Listening port: ", string(params[6]))
+
+		_, _ = conn.Write(h.parser.WriteOk())
+	case "capa":
+		fmt.Println("Capa: ", string(params[6]))
+		_, _ = conn.Write(h.parser.WriteOk())
 	}
 
-	fmt.Println("Params: ", params)
 }
