@@ -24,6 +24,7 @@ const (
 	INFO = "info"
 
 	REPLCONF = "replconf"
+	PSYNC    = "psync"
 )
 
 type Handler struct {
@@ -83,6 +84,7 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.InfoHandler(conn, buffer)
 	case REPLCONF:
 		h.ReplconfHandler(conn, buffer)
+	case PSYNC:
 
 	default:
 		fmt.Println("Unknown command: ", command)
