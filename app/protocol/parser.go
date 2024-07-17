@@ -12,4 +12,5 @@ type Parser interface {
 	WriteError(string) []byte
 	WriteNull() []byte
 	WriteArray([][]byte) []byte
+	WriteFile([]byte) []byte
 }

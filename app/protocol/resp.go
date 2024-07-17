@@ -129,3 +129,8 @@ func (r *RESP) WriteArray(array [][]byte) []byte {
 	return []byte(fmt.Sprintf("*%d\r\n%s", length, buffer.String()))
 
 }
+
+func (r *RESP) WriteFile(data []byte) []byte {
+	length := len(data)
+	return []byte(fmt.Sprintf("$%d\r\n%s", length, data))
+}
