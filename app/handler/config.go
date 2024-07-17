@@ -52,6 +52,10 @@ func (c *HandlerConfig) IsReplica() bool {
 	return c.role == "slave"
 }
 
+func (c *HandlerConfig) isMaster() bool {
+	return c.role == "master"
+}
+
 func (c *HandlerConfig) getSocket() string {
 	return c.address + ":" + c.port
 }

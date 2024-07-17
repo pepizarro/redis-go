@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/protocol"
 	"github.com/codecrafters-io/redis-starter-go/app/storage"
@@ -28,9 +29,10 @@ const (
 )
 
 type Handler struct {
-	store  *storage.KeySpace
-	parser protocol.Parser
-	config *HandlerConfig
+	store    *storage.KeySpace
+	parser   protocol.Parser
+	config   *HandlerConfig
+	replicas []net.Conn
 }
 
 func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *HandlerConfig) *Handler {
@@ -44,11 +46,26 @@ func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *Handler
 		go newHandler.connectToMaster()
 	}
 
+	go func() {
+		for {
+			newHandler.logReplicas()
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
 	return newHandler
+}
+
+func (h *Handler) logReplicas() {
+	fmt.Println("Replicas: ", h.replicas)
 }
 
 func (h *Handler) IsReplica() bool {
 	return h.config.IsReplica()
+}
+
+func (h *Handler) IsMaster() bool {
+	return h.config.isMaster()
 }
 
 func (h *Handler) Handle(conn net.Conn, buffer []byte) {
@@ -57,6 +74,15 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		fmt.Println("Error getting command: ", err)
 		conn.Close()
 		return
+	}
+
+	writeGroup := map[string]bool{
+		SET:  true,
+		XADD: true,
+	}
+
+	if h.config.isMaster() && writeGroup[command] {
+		go h.replicate(buffer)
 	}
 
 	switch command {

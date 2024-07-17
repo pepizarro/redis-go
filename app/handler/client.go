@@ -25,7 +25,7 @@ func (h *Handler) connectToMaster() {
 		}
 		defer conn.Close()
 
-		connectionMaster := h.SetConnectionToMaster(conn)
+		connectionMaster := h.connectionToMaster(conn)
 		if connectionMaster != nil {
 			fmt.Println("Error connecting to master: ", connectionMaster)
 		} else {
@@ -36,7 +36,7 @@ func (h *Handler) connectToMaster() {
 	}
 }
 
-func (h *Handler) SetConnectionToMaster(conn net.Conn) error {
+func (h *Handler) connectionToMaster(conn net.Conn) error {
 	fmt.Println("Setting connection to master: ", conn)
 	listeningPort := h.config.getListeningPort()
 
@@ -53,14 +53,16 @@ func (h *Handler) SetConnectionToMaster(conn net.Conn) error {
 		}
 	}
 
-	if conn != nil {
-		defer conn.Close()
+	for {
+		if conn == nil {
+			return fmt.Errorf("Disconnected from master")
+		}
 	}
 
-	return nil
 }
 
 func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
+	fmt.Println("Sending to master: ", string(buffer))
 	_, err := conn.Write(buffer)
 	if err != nil {
 		return fmt.Errorf("Error writing to master: %s", err)
@@ -69,6 +71,22 @@ func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
 	_, err = conn.Read(buffer)
 	if err != nil {
 		return fmt.Errorf("Error reading from master: %s", err)
+	}
+
+	return nil
+}
+
+// Master methods
+
+func (h *Handler) replicate(buffer []byte) error {
+	fmt.Println("Replicating")
+
+	for _, replica := range h.replicas {
+		fmt.Println("Replicating to replica: ", replica.RemoteAddr())
+		_, err := replica.Write(buffer)
+		if err != nil {
+			fmt.Println("Error writing to replica")
+		}
 	}
 
 	return nil
