@@ -85,6 +85,7 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 	case REPLCONF:
 		h.ReplconfHandler(conn, buffer)
 	case PSYNC:
+		h.PsyncHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)
