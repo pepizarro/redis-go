@@ -44,7 +44,7 @@ func (h *Handler) connectionToMaster(conn net.Conn) error {
 	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("PING")}))
 	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("listening-port"), h.parser.WriteString(listeningPort)}))
 	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("capa"), h.parser.WriteString("psync2")}))
-	messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("PSYNC"), h.parser.WriteString("?"), h.parser.WriteString("-1")}))
+	// messages = append(messages, h.parser.WriteArray([][]byte{h.parser.WriteString("PSYNC"), h.parser.WriteString("?"), h.parser.WriteString("-1")}))
 
 	for _, message := range messages {
 		err := h.sendAndRead(conn, message)
@@ -53,37 +53,63 @@ func (h *Handler) connectionToMaster(conn net.Conn) error {
 		}
 	}
 
+	_, err := conn.Write(h.parser.WriteArray([][]byte{h.parser.WriteString("PSYNC"), h.parser.WriteString("?"), h.parser.WriteString("-1")}))
+	if err != nil {
+		return fmt.Errorf("Error writing to master: %s", err)
+	}
+
 	return h.listenFromMaster(conn)
 }
 
 func (h *Handler) listenFromMaster(conn net.Conn) error {
 
 	buffer := make([]byte, 1024)
+
 	for {
-		// fmt.Println("Waiting for messages from master...")
 		if conn == nil {
 			return fmt.Errorf("Disconnected from master")
 		}
 
-		// conn.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
 		n, err := conn.Read(buffer)
-		// h.parser
+
 		if err != nil {
 			continue
 		}
 		if n > 0 {
-			fmt.Println("Received bytes from master: ", buffer[:n])
+			fmt.Println("Received bytes from master: ", string(buffer[:n]))
 			_, err := h.parser.GetCommand(buffer[:n])
-			if err == nil {
-				// fmt.Println("Is a command: ", command)
-				// parse every array
-				commands, err := h.parser.GetArrays(buffer[:n])
-				if err != nil {
-					return fmt.Errorf("Error getting commands: %s", err)
-				}
-				fmt.Println("Received commands from master: ", commands)
-				for _, c := range commands {
-					h.Handle(conn, c)
+			if err != nil {
+				continue
+			}
+			arrays, err := h.parser.GetArrays(buffer[:n])
+			for _, arr := range arrays {
+				command, err := h.parser.GetCommand(arr)
+				fmt.Println("Received buffer from master: ", string(arr))
+				switch command {
+
+				case "replconf":
+					subCommand, err := h.parser.GetSubCommand(arr)
+
+					if err != nil {
+						continue
+					}
+					switch subCommand {
+					case "getack":
+						fmt.Println("Received getack from master")
+						err := h.send(conn, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("ACK"), h.parser.WriteString("0")}))
+						if err != nil {
+							continue
+						}
+					}
+
+				case "set":
+					h.Handle(conn, arr)
+
+				default:
+					if err != nil {
+						continue
+					}
+					fmt.Println("Received buffer from master: ", string(arr))
 				}
 			}
 		}
@@ -108,7 +134,7 @@ func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
 }
 
 func (h *Handler) send(conn net.Conn, buffer []byte) error {
-	fmt.Println("Sending in sendAndRead: ", string(buffer))
+	fmt.Println("Sending in send: ", string(buffer))
 	_, err := conn.Write(buffer)
 	if err != nil {
 		return fmt.Errorf("Error writing: %s", err)
