@@ -14,4 +14,5 @@ type Parser interface {
 	WriteNull() []byte
 	WriteArray([][]byte) []byte
 	WriteFile([]byte) []byte
+	WriteInteger(int) []byte
 }

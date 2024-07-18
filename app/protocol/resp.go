@@ -135,6 +135,10 @@ func (r *RESP) WriteFile(data []byte) []byte {
 	return []byte(fmt.Sprintf("$%d\r\n%s", length, data))
 }
 
+func (r *RESP) WriteInteger(number int) []byte {
+	return []byte(fmt.Sprintf(":%d\r\n", number))
+}
+
 func (r *RESP) GetArrays(buffer []byte) ([][]byte, error) {
 
 	// split for every *

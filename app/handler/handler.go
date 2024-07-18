@@ -25,6 +25,8 @@ const (
 
 	REPLCONF = "replconf"
 	PSYNC    = "psync"
+
+	WAIT = "wait"
 )
 
 type Handler struct {
@@ -45,26 +47,7 @@ func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *Handler
 		go newHandler.connectToMaster()
 	}
 
-	// go func() {
-	// 	for {
-	// 		newHandler.logReplicas()
-	// 		time.Sleep(5 * time.Second)
-	// 	}
-	// }()
-
 	return newHandler
-}
-
-func (h *Handler) logReplicas() {
-	fmt.Println("Replicas: ", h.replicas)
-}
-
-func (h *Handler) IsReplica() bool {
-	return h.config.IsReplica()
-}
-
-func (h *Handler) IsMaster() bool {
-	return h.config.isMaster()
 }
 
 func (h *Handler) Handle(conn net.Conn, buffer []byte) {
@@ -111,6 +94,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.ReplconfHandler(conn, buffer)
 	case PSYNC:
 		h.PsyncHandler(conn, buffer)
+	case WAIT:
+		h.WaitHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)
@@ -121,6 +106,18 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		conn.Close()
 		return
 	}
+}
+
+func (h *Handler) logReplicas() {
+	fmt.Println("Replicas: ", h.replicas)
+}
+
+func (h *Handler) IsReplica() bool {
+	return h.config.IsReplica()
+}
+
+func (h *Handler) IsMaster() bool {
+	return h.config.isMaster()
 }
 
 func (h *Handler) PingHandler(conn net.Conn, buffer []byte) {
