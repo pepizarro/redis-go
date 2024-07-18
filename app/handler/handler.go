@@ -124,10 +124,12 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 }
 
 func (h *Handler) PingHandler(conn net.Conn, buffer []byte) {
-	_, err := conn.Write([]byte("+PONG\r\n"))
-	if err != nil {
-		fmt.Println("Error writing PONG to client: ", err)
-		return
+	if h.IsMaster() {
+		_, err := conn.Write([]byte("+PONG\r\n"))
+		if err != nil {
+			fmt.Println("Error writing PONG to client: ", err)
+			return
+		}
 	}
 }
 

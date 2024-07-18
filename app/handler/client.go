@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -64,6 +65,7 @@ func (h *Handler) connectionToMaster(conn net.Conn) error {
 func (h *Handler) listenFromMaster(conn net.Conn) error {
 
 	buffer := make([]byte, 1024)
+	bytesProcessed := 0
 
 	for {
 		if conn == nil {
@@ -77,6 +79,10 @@ func (h *Handler) listenFromMaster(conn net.Conn) error {
 		}
 		if n > 0 {
 			fmt.Println("Received bytes from master: ", string(buffer[:n]))
+			// if buffer[0] != '*' {
+			// 	fmt.Println("Not a command")
+			// 	continue
+			// }
 			_, err := h.parser.GetCommand(buffer[:n])
 			if err != nil {
 				continue
@@ -84,7 +90,6 @@ func (h *Handler) listenFromMaster(conn net.Conn) error {
 			arrays, err := h.parser.GetArrays(buffer[:n])
 			for _, arr := range arrays {
 				command, err := h.parser.GetCommand(arr)
-				fmt.Println("Received buffer from master: ", string(arr))
 				switch command {
 
 				case "replconf":
@@ -96,20 +101,32 @@ func (h *Handler) listenFromMaster(conn net.Conn) error {
 					switch subCommand {
 					case "getack":
 						fmt.Println("Received getack from master")
-						err := h.send(conn, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("ACK"), h.parser.WriteString("0")}))
+						err := h.send(conn, h.parser.WriteArray([][]byte{h.parser.WriteString("REPLCONF"), h.parser.WriteString("ACK"), h.parser.WriteString(strconv.Itoa(bytesProcessed))}))
 						if err != nil {
 							continue
 						}
 					}
 
+					fmt.Println("buffer in REPLCONF: ", arr)
+					fmt.Println("Bytes processed in REPLCONF: ", bytesProcessed, "+", len(arr)+1)
+					bytesProcessed += len(arr) + 4
 				case "set":
 					h.Handle(conn, arr)
+
+					fmt.Println("buffer in SET: ", string(arr))
+					fmt.Println("Bytes processed in SET: ", bytesProcessed, "+", len(arr))
+					bytesProcessed += len(arr) + 1
+				case "ping":
+					h.Handle(conn, arr)
+
+					fmt.Println("buffer in PING: ", string(arr))
+					fmt.Println("Bytes processed in PING: ", bytesProcessed, "+", len(arr)+1)
+					bytesProcessed += len(arr) + 1
 
 				default:
 					if err != nil {
 						continue
 					}
-					fmt.Println("Received buffer from master: ", string(arr))
 				}
 			}
 		}
