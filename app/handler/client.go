@@ -32,7 +32,7 @@ func (h *Handler) connectToMaster() {
 			fmt.Println("Connected to master")
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }
 
@@ -53,33 +53,73 @@ func (h *Handler) connectionToMaster(conn net.Conn) error {
 		}
 	}
 
+	return h.listenFromMaster(conn)
+}
+
+func (h *Handler) listenFromMaster(conn net.Conn) error {
+
+	buffer := make([]byte, 1024)
 	for {
+		// fmt.Println("Waiting for messages from master...")
 		if conn == nil {
 			return fmt.Errorf("Disconnected from master")
 		}
-	}
 
+		// conn.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
+		n, err := conn.Read(buffer)
+		// h.parser
+		if err != nil {
+			continue
+		}
+		if n > 0 {
+			fmt.Println("Received bytes from master: ", buffer[:n])
+			_, err := h.parser.GetCommand(buffer[:n])
+			if err == nil {
+				// fmt.Println("Is a command: ", command)
+				// parse every array
+				commands, err := h.parser.GetArrays(buffer[:n])
+				if err != nil {
+					return fmt.Errorf("Error getting commands: %s", err)
+				}
+				fmt.Println("Received commands from master: ", commands)
+				for _, c := range commands {
+					h.Handle(conn, c)
+				}
+			}
+		}
+	}
 }
 
 func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
-	fmt.Println("Sending to master: ", string(buffer))
+	fmt.Println("Sending in sendAndRead: ", string(buffer))
 	_, err := conn.Write(buffer)
 	if err != nil {
-		return fmt.Errorf("Error writing to master: %s", err)
+		return fmt.Errorf("Error writing: %s", err)
 	}
 	buffer = make([]byte, 1024)
+	fmt.Println("Reading...")
 	_, err = conn.Read(buffer)
 	if err != nil {
-		return fmt.Errorf("Error reading from master: %s", err)
+		return fmt.Errorf("Error reading: %s", err)
 	}
+	fmt.Println("Received in sendAndRead: ", string(buffer))
 
+	return nil
+}
+
+func (h *Handler) send(conn net.Conn, buffer []byte) error {
+	fmt.Println("Sending in sendAndRead: ", string(buffer))
+	_, err := conn.Write(buffer)
+	if err != nil {
+		return fmt.Errorf("Error writing: %s", err)
+	}
 	return nil
 }
 
 // Master methods
 
 func (h *Handler) replicate(buffer []byte) error {
-	fmt.Println("Replicating")
+	// fmt.Println("Replicating")
 
 	for _, replica := range h.replicas {
 		fmt.Println("Replicating to replica: ", replica.RemoteAddr())

@@ -134,3 +134,12 @@ func (r *RESP) WriteFile(data []byte) []byte {
 	length := len(data)
 	return []byte(fmt.Sprintf("$%d\r\n%s", length, data))
 }
+
+func (r *RESP) GetArrays(buffer []byte) ([][]byte, error) {
+
+	// split for every *
+	arrays := bytes.Split(buffer, []byte{'*'})
+	fmt.Println("Arrays: ", arrays)
+
+	return arrays, nil
+}

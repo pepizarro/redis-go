@@ -9,6 +9,7 @@ import (
 
 func (h *Handler) SetHandler(conn net.Conn, buffer []byte) {
 	// Write the data back to the client
+	fmt.Println("Set Handler: ", string(buffer))
 
 	params, err := h.parser.GetParams(buffer)
 	if err != nil {
@@ -57,10 +58,12 @@ func (h *Handler) SetHandler(conn net.Conn, buffer []byte) {
 		}
 	}
 
-	success := h.parser.WriteOk()
-	_, err = conn.Write(success)
-	if err != nil {
-		fmt.Println("Error writing to client: ", err)
-		return
+	if h.IsMaster() {
+		success := h.parser.WriteOk()
+		_, err = conn.Write(success)
+		if err != nil {
+			fmt.Println("Error writing to client: ", err)
+			return
+		}
 	}
 }

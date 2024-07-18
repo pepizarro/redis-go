@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/protocol"
 	"github.com/codecrafters-io/redis-starter-go/app/storage"
@@ -46,12 +45,12 @@ func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *Handler
 		go newHandler.connectToMaster()
 	}
 
-	go func() {
-		for {
-			newHandler.logReplicas()
-			time.Sleep(5 * time.Second)
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		newHandler.logReplicas()
+	// 		time.Sleep(5 * time.Second)
+	// 	}
+	// }()
 
 	return newHandler
 }

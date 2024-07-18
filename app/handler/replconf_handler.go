@@ -19,6 +19,7 @@ func (h *Handler) ReplconfHandler(conn net.Conn, buffer []byte) {
 	switch subCommand {
 	case "listening-port":
 		fmt.Println("Listening port: ", string(params[6]))
+		fmt.Println("Replica: ", conn.RemoteAddr())
 		h.replicas = append(h.replicas, conn)
 		_, _ = conn.Write(h.parser.WriteOk())
 

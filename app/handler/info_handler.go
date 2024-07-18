@@ -33,7 +33,7 @@ func (h *Handler) InfoHandler(conn net.Conn, buffer []byte) {
 		response = response + key + ":" + value + "\r\n"
 	}
 
-	fmt.Println("Response: ", string(response))
+	// fmt.Println("Response: ", string(response))
 
 	_, err = conn.Write(h.parser.WriteString(response))
 	if err != nil {
