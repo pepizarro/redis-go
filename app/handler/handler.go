@@ -28,12 +28,18 @@ const (
 	PSYNC    = "psync"
 
 	WAIT = "wait"
+
+	INCR = "incr"
 )
 
 type Replica struct {
 	mu      sync.Mutex
 	conn    net.Conn
 	updated bool
+}
+
+type Transaction struct {
+	commands [][]byte
 }
 
 type Handler struct {
@@ -61,6 +67,7 @@ func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *Handler
 
 func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 
+	fmt.Println("Handling request from conn: ", conn)
 	command, err := h.parser.GetCommand(buffer)
 	if err != nil {
 		fmt.Println("Error getting command: ", err)
@@ -106,6 +113,9 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.PsyncHandler(conn, buffer)
 	case WAIT:
 		h.WaitHandler(conn, buffer)
+
+	case INCR:
+		h.IncrHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)
