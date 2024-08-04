@@ -22,16 +22,14 @@ func (h *Handler) IncrHandler(conn net.Conn, buffer []byte) {
 		// defaulting to 1
 		h.store.Set(key, "string", []byte("1"))
 		response := h.parser.WriteInteger(1)
-		_, err = conn.Write(response)
-		if err != nil {
-			fmt.Println("Error writing to client: ", err)
-			return
-		}
+		_, _ = conn.Write(response)
 		return
 	}
 
 	if !IsReal(value) {
 		fmt.Println("Value is not a number")
+		errMsg := h.parser.WriteError("ERR value is not an integer or out of range")
+		_, _ = conn.Write(errMsg)
 		return
 	}
 
