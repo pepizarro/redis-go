@@ -19,6 +19,14 @@ func (h *Handler) IncrHandler(conn net.Conn, buffer []byte) {
 	value, err := h.store.Get(key)
 	if err != nil {
 		fmt.Println("Error getting key: ", err)
+		// defaulting to 1
+		h.store.Set(key, "string", []byte("1"))
+		response := h.parser.WriteInteger(1)
+		_, err = conn.Write(response)
+		if err != nil {
+			fmt.Println("Error writing to client: ", err)
+			return
+		}
 		return
 	}
 
