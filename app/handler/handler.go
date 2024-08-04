@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/app/protocol"
 	"github.com/codecrafters-io/redis-starter-go/app/storage"
@@ -29,18 +30,26 @@ const (
 	WAIT = "wait"
 )
 
+type Replica struct {
+	mu      sync.Mutex
+	conn    net.Conn
+	updated bool
+}
+
 type Handler struct {
-	store    *storage.KeySpace
-	parser   protocol.Parser
-	config   *HandlerConfig
-	replicas []net.Conn
+	store          *storage.KeySpace
+	parser         protocol.Parser
+	config         *HandlerConfig
+	replicas       []*Replica
+	bytesProcessed int
 }
 
 func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *HandlerConfig) *Handler {
 	newHandler := &Handler{
-		store:  store,
-		parser: parser,
-		config: config,
+		store:          store,
+		parser:         parser,
+		config:         config,
+		bytesProcessed: 0,
 	}
 
 	if newHandler.IsReplica() {
@@ -51,6 +60,7 @@ func NewHandler(store *storage.KeySpace, parser protocol.Parser, config *Handler
 }
 
 func (h *Handler) Handle(conn net.Conn, buffer []byte) {
+
 	command, err := h.parser.GetCommand(buffer)
 	if err != nil {
 		fmt.Println("Error getting command: ", err)

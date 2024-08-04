@@ -134,11 +134,13 @@ func (h *Handler) listenFromMaster(conn net.Conn) error {
 }
 
 func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
-	fmt.Println("Sending in sendAndRead: ", string(buffer))
+	fmt.Println("Sending in sendAndRead..")
+	fmt.Println("conn: ", conn)
 	_, err := conn.Write(buffer)
 	if err != nil {
 		return fmt.Errorf("Error writing: %s", err)
 	}
+	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
 	buffer = make([]byte, 1024)
 	fmt.Println("Reading...")
 	_, err = conn.Read(buffer)
@@ -146,6 +148,7 @@ func (h *Handler) sendAndRead(conn net.Conn, buffer []byte) error {
 		return fmt.Errorf("Error reading: %s", err)
 	}
 	fmt.Println("Received in sendAndRead: ", string(buffer))
+	conn.SetReadDeadline(time.Time{})
 
 	return nil
 }
@@ -160,16 +163,18 @@ func (h *Handler) send(conn net.Conn, buffer []byte) error {
 }
 
 // Master methods
-
 func (h *Handler) replicate(buffer []byte) error {
 	// fmt.Println("Replicating")
 
 	for _, replica := range h.replicas {
-		fmt.Println("Replicating to replica: ", replica.RemoteAddr())
-		_, err := replica.Write(buffer)
+		replica.mu.Lock()
+		replica.updated = false
+		fmt.Println("Replicating to replica: ", replica.conn.RemoteAddr())
+		_, err := replica.conn.Write(buffer)
 		if err != nil {
 			fmt.Println("Error writing to replica")
 		}
+		replica.mu.Unlock()
 	}
 
 	return nil
