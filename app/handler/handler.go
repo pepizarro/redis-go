@@ -29,9 +29,10 @@ const (
 
 	WAIT = "wait"
 
-	INCR  = "incr"
-	MULTI = "multi"
-	EXEC  = "exec"
+	INCR    = "incr"
+	MULTI   = "multi"
+	EXEC    = "exec"
+	DISCARD = "discard"
 )
 
 type Replica struct {
@@ -132,6 +133,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		h.MultiHandler(conn, buffer)
 	case EXEC:
 		h.ExecHandler(conn)
+	case DISCARD:
+		h.DiscardHandler(conn)
 
 	default:
 		fmt.Println("Unknown command: ", command)
@@ -160,12 +163,12 @@ func (h *Handler) removeTransaction(conn net.Conn) {
 }
 
 func (h *Handler) queueCommandToTransaction(conn net.Conn, buffer []byte, command string) error {
-	if command == EXEC {
+	if command == EXEC || command == DISCARD {
 		return fmt.Errorf("Command not supposed to be queued: %v", command)
 	}
 	for _, t := range h.transactions {
 		if t.conn == conn {
-			fmt.Println("Appending command to transaction: ", string(buffer))
+
 			newBuffer := make([]byte, len(buffer))
 			copy(newBuffer, buffer)
 			t.commands = append(t.commands, newBuffer)

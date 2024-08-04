@@ -31,11 +31,7 @@ func (h *Handler) ExecHandler(conn net.Conn) {
 		return
 	}
 
-	fmt.Println("Transaction: ", transaction.conn)
 	commands := transaction.commands
-	for _, cmd := range commands {
-		fmt.Println("Command: ", string(cmd))
-	}
 
 	if len(commands) == 0 {
 		fmt.Println("No commands in transaction..")
@@ -47,11 +43,6 @@ func (h *Handler) ExecHandler(conn net.Conn) {
 	var responses [][]byte
 	conn1, conn2 := net.Pipe()
 
-	fmt.Println("Pipes created..")
-	// fmt.Println("conn1: ", conn1)
-	// fmt.Println("conn2: ", conn2)
-
-	// conn1.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	for _, cmd := range commands {
 		go h.Handle(conn2, cmd)
 		buffer := make([]byte, 1024)
@@ -63,8 +54,21 @@ func (h *Handler) ExecHandler(conn net.Conn) {
 		}
 		responses = append(responses, buffer)
 	}
-	fmt.Println("Responses: ", responses)
 
 	_, _ = conn.Write(h.parser.WriteArray(responses))
 
+}
+
+func (h *Handler) DiscardHandler(conn net.Conn) {
+	fmt.Println("DiscardHandler..")
+
+	for _, t := range h.transactions {
+		if t.conn == conn {
+			h.removeTransaction(conn)
+			_, _ = conn.Write(h.parser.WriteOk())
+			return
+		}
+	}
+
+	_, _ = conn.Write(h.parser.WriteError("ERR DISCARD without MULTI"))
 }
