@@ -88,6 +88,12 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		go h.replicate(buffer)
 	}
 
+	// check if there is a transaction
+	err = h.queueCommandToTransaction(conn, buffer, command)
+	if err == nil {
+		return
+	}
+
 	switch command {
 	case PING:
 		h.PingHandler(conn, buffer)
@@ -149,6 +155,20 @@ func (h *Handler) removeTransaction(conn net.Conn) {
 		}
 	}
 	h.transactions = newTransactions
+}
+
+func (h *Handler) queueCommandToTransaction(conn net.Conn, buffer []byte, command string) error {
+	if command == EXEC {
+		return fmt.Errorf("Command not supposed to be queued: %v", command)
+	}
+	for _, t := range h.transactions {
+		if t.conn == conn {
+			t.commands = append(t.commands, buffer)
+			_, _ = conn.Write(h.parser.WriteString("QUEUED"))
+			return nil
+		}
+	}
+	return fmt.Errorf("No transaction found for conn: %v", conn)
 }
 
 func (h *Handler) logReplicas() {
