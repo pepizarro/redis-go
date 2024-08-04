@@ -94,6 +94,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		return
 	}
 
+	fmt.Println("Command: ", command)
+
 	switch command {
 	case PING:
 		h.PingHandler(conn, buffer)
@@ -129,7 +131,7 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 	case MULTI:
 		h.MultiHandler(conn, buffer)
 	case EXEC:
-		h.ExecHandler(conn, buffer)
+		h.ExecHandler(conn)
 
 	default:
 		fmt.Println("Unknown command: ", command)
@@ -163,8 +165,16 @@ func (h *Handler) queueCommandToTransaction(conn net.Conn, buffer []byte, comman
 	}
 	for _, t := range h.transactions {
 		if t.conn == conn {
-			t.commands = append(t.commands, buffer)
+			fmt.Println("Appending command to transaction: ", string(buffer))
+			newBuffer := make([]byte, len(buffer))
+			copy(newBuffer, buffer)
+			t.commands = append(t.commands, newBuffer)
 			_, _ = conn.Write(h.parser.WriteString("QUEUED"))
+
+			fmt.Println("commands:")
+			for _, cmd := range t.commands {
+				fmt.Println(string(cmd))
+			}
 			return nil
 		}
 	}
