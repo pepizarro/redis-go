@@ -29,7 +29,8 @@ const (
 
 	WAIT = "wait"
 
-	INCR = "incr"
+	INCR  = "incr"
+	MULTI = "multi"
 )
 
 type Replica struct {
@@ -116,6 +117,8 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 
 	case INCR:
 		h.IncrHandler(conn, buffer)
+	case MULTI:
+		h.MultiHandler(conn, buffer)
 
 	default:
 		fmt.Println("Unknown command: ", command)
