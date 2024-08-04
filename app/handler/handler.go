@@ -42,6 +42,7 @@ type Replica struct {
 
 type Transaction struct {
 	commands [][]byte
+	conn     net.Conn
 }
 
 type Handler struct {
@@ -49,6 +50,7 @@ type Handler struct {
 	parser         protocol.Parser
 	config         *HandlerConfig
 	replicas       []*Replica
+	transactions   []*Transaction
 	bytesProcessed int
 }
 
@@ -132,6 +134,21 @@ func (h *Handler) Handle(conn net.Conn, buffer []byte) {
 		conn.Close()
 		return
 	}
+}
+
+func (h *Handler) appendTransaction(conn net.Conn) {
+	fmt.Println("Appending transaction with conn: ", conn)
+	h.transactions = append(h.transactions, &Transaction{conn: conn})
+}
+
+func (h *Handler) removeTransaction(conn net.Conn) {
+	var newTransactions []*Transaction
+	for _, t := range h.transactions {
+		if t.conn != conn {
+			newTransactions = append(newTransactions, t)
+		}
+	}
+	h.transactions = newTransactions
 }
 
 func (h *Handler) logReplicas() {
