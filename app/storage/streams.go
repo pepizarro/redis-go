@@ -298,9 +298,7 @@ func (k *KeySpace) SetEntryWithID(key string, id string, entry Entry) (string, e
 	fmt.Println("Setting entry with WithID")
 
 	k.mu.Lock()
-	defer fmt.Println("Unlocked")
 	defer k.mu.Unlock()
-	defer fmt.Println("Unlocking")
 
 	for key, item := range k.keyspace {
 		fmt.Println("Key: ", key, "Item: ", item)
